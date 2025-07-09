@@ -2,24 +2,39 @@ import pygame
 import os
 import time
 
-# Setup
+# === Setup ===
 pygame.init()
 pygame.mixer.init()
 pygame.font.init()
 
+# Set window size and title
 WIDTH, HEIGHT = 320, 240
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Music Player")
 
+# Define colors
+RED = (180, 70, 37)
+ORANGE = (213, 129, 28)
+YELLOW = (225, 175, 30)
+GREEN = (145, 179, 47)
+BLUE = (82, 141, 202)
+INDIGO = (160, 82, 202)
+TAN = (227, 210, 177)
+BROWN = (82, 66, 46)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+
+# Set colors and text
+PRIMARY = TAN
+SECONDARY = BROWN
 font = pygame.font.SysFont('Arial', 16)
 
+# Declare music var preferences
 MUSIC_FOLDER = "music"
 SEEK_SPEED = 5  # seconds per seek
-SEEK_INTERVAL = 0.2  # seconds betwen seek steps
+SEEK_INTERVAL = 0.2  # seconds between seek steps
 
-# State
+# === State ===
 albums = sorted([f for f in os.listdir(MUSIC_FOLDER) if os.path.isdir(os.path.join(MUSIC_FOLDER, f))])
 selected_album_idx = 0
 songs = []
@@ -115,7 +130,6 @@ def seek(direction):
         play_song(start_pos=new_pos)
 
 
-
 def next_song(start_pos=0.0):
     global current_song_idx
     current_song_idx = (current_song_idx + 1) % len(songs)
@@ -123,13 +137,13 @@ def next_song(start_pos=0.0):
 
 
 def draw_interface():
-    screen.fill(WHITE)
+    screen.fill(PRIMARY)
     y = 10
 
     if not is_in_album:
         for i, album in enumerate(albums):
             text = "> " + album if i == selected_album_idx else "  " + album
-            label = font.render(text, True, BLACK)
+            label = font.render(text, True, SECONDARY)
             screen.blit(label, (10, y))
             y += 20
     else:
@@ -146,19 +160,23 @@ def draw_interface():
         total_seconds = int(song_length) % 60
         total_time_str = f"{total_minutes}:{total_seconds:02d}"
 
-        screen.blit(font.render("Now Playing:", True, BLACK), (10, y)); y += 20
+        screen.blit(font.render("Now Playing:", True, SECONDARY), (10, y))
+        y += 20
 
-        screen.blit(font.render(f"Album: {album}", True, BLACK), (10, y)); y += 20
+        screen.blit(font.render(f"Album: {album}", True, SECONDARY), (10, y))
+        y += 20
 
-        screen.blit(font.render(f"Track: {current_song_idx + 1} / {len(songs)}", True, BLACK), (10, y));y += 20
+        screen.blit(font.render(f"Track: {current_song_idx + 1} / {len(songs)}", True, SECONDARY), (10, y))
+        y += 20
 
         clean_name = song[5:] if len(song) > 5 else song  # remove first 5 characters
         if clean_name.lower().endswith(".mp3"):
             clean_name = clean_name[:-4]  # remove .mp3
-        screen.blit(font.render(f"Song: {clean_name}", True, BLACK), (10, y));y += 20
-        #screen.blit(font.render(f"Song: {song}", True, BLACK), (10, y)); y += 20
+        screen.blit(font.render(f"Song: {clean_name}", True, SECONDARY), (10, y))
+        y += 20
 
-        screen.blit(font.render(f"Time: {time_str} / {total_time_str}", True, BLACK), (10, y));y += 20
+        screen.blit(font.render(f"Time: {time_str} / {total_time_str}", True, SECONDARY), (10, y))
+        y += 20
 
         # Song progress bar
         bar_x = 10
@@ -171,8 +189,8 @@ def draw_interface():
         else:
             song_progress = 0
 
-        pygame.draw.rect(screen, BLACK, (bar_x, bar_y, bar_width, bar_height), 1)  # border
-        pygame.draw.rect(screen, BLACK, (bar_x, bar_y, bar_width * song_progress, bar_height))  # fill
+        pygame.draw.rect(screen, SECONDARY, (bar_x, bar_y, bar_width, bar_height), 1)  # border
+        pygame.draw.rect(screen, SECONDARY, (bar_x, bar_y, bar_width * song_progress, bar_height))  # fill
 
         y = bar_y + bar_height + 10
 
@@ -184,14 +202,13 @@ def draw_interface():
             album_progress = 0
 
         bar_y = y
-        pygame.draw.rect(screen, BLACK, (bar_x, bar_y, bar_width, bar_height), 1)  # border
-        pygame.draw.rect(screen, BLACK, (bar_x, bar_y, bar_width * album_progress, bar_height))  # fill
+        pygame.draw.rect(screen, SECONDARY, (bar_x, bar_y, bar_width, bar_height), 1)  # border
+        pygame.draw.rect(screen, SECONDARY, (bar_x, bar_y, bar_width * album_progress, bar_height))  # fill
 
     pygame.display.flip()
 
 
-
-# Main Loop
+# === Main Loop ===
 running = True
 while running:
     draw_interface()
@@ -220,7 +237,7 @@ while running:
                     else:
                         resume_song()
                 elif event.key == pygame.K_4:
-                    # stop playback and return to album menu
+                    # Stop playback and return to album menu
                     pygame.mixer.music.stop()
                     is_in_album = False
                     is_playing = False
