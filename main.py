@@ -17,6 +17,11 @@ font = pygame.font.SysFont('None', 22)
 custom_font_path = os.path.join("assets", "Data70.ttf")
 album_font = pygame.font.Font(custom_font_path, 32)
 
+fresh_palm_font_path = os.path.join("assets", "FreshPalm.ttf")
+fresh_palm_font = pygame.font.Font(fresh_palm_font_path, 26)
+fresh_palm_smaller = pygame.font.Font(fresh_palm_font_path, 18)
+time_font_small = pygame.font.SysFont('Arial', 12)
+
 # Background images
 BACKGROUND_IMAGES = [
     "ArcadeBG.png",
@@ -26,11 +31,10 @@ BACKGROUND_IMAGES = [
     "VaporBG.png",
     "BlackBG.png",
 ]
-background_idx = 2  # Starting with SpaceBG.png
+background_idx = 4  # Starting with SpaceBG.png
 
 BACKGROUND_NAMES = [
-    img[:-6] if img.lower().endswith("BG.png") else img[:-4]  # Remove 'BG.png' or '.png'
-    for img in BACKGROUND_IMAGES
+    img[:-6] for img in BACKGROUND_IMAGES
 ]
 
 def load_background(index):
@@ -38,6 +42,8 @@ def load_background(index):
     return pygame.image.load(path).convert()
 
 background_image = load_background(background_idx)
+blank_cassette = pygame.image.load(os.path.join("assets", "BlankCassette.png")).convert_alpha()
+wheel_image = pygame.image.load(os.path.join("assets", "Wheel.png")).convert_alpha()
 
 # Themes
 COLOR_THEMES = [
@@ -52,6 +58,7 @@ COLOR_THEMES = [
 selected_color_idx = 0
 TEXT_COLOR = COLOR_THEMES[selected_color_idx][1]
 WHITE = (255, 255, 255)  # For fixed white text
+REEL_COLOR = (33, 26, 22)
 
 def apply_color_theme(index):
     global TEXT_COLOR
@@ -109,6 +116,12 @@ last_play_time = 0
 song_length = 0.0
 
 clock = pygame.time.Clock()
+wheel_angle = 0
+
+def rotate_image(image, angle):
+    rotated = pygame.transform.rotozoom(image, -angle, 1.0)
+    rect = rotated.get_rect(center=image.get_rect().center)
+    return rotated, rect
 
 # === Music Functions ===
 def load_album(album_idx):
@@ -187,7 +200,34 @@ def next_song(start_pos=0.0):
 
 # === Drawing ===
 def draw_interface():
-    screen.blit(background_image, (0, 0))
+    global wheel_angle
+
+    # screen.blit(background_image, (0, 0))
+    if is_in_album:
+        # DRAW A BLACK BG
+        screen.fill((0, 0, 0))
+
+        # Update current position for dynamic reel sizing
+        update_current_pos()
+        total_tracks = len(songs)
+        album_progress = (current_song_idx + current_pos / song_length) / total_tracks if total_tracks > 0 and song_length > 0 else 0
+        left_radius = int(78 - (45 * album_progress))
+        right_radius = int(35 + (40 * album_progress))
+        pygame.draw.circle(screen, (33, 26, 22), (85, 110), left_radius)
+        pygame.draw.circle(screen, (33, 26, 22), (WIDTH - 84, 110), right_radius)
+
+        screen.blit(blank_cassette, (0, 0))
+        if is_playing:
+            wheel_angle = (wheel_angle + 2) % 360
+
+        rotated_wheel, _ = rotate_image(wheel_image, wheel_angle)
+        wheel_pos_left = rotated_wheel.get_rect(center=(85, 110))
+        wheel_pos_right = rotated_wheel.get_rect(center=(WIDTH - 84, 110))
+
+        screen.blit(rotated_wheel, wheel_pos_left)
+        screen.blit(rotated_wheel, wheel_pos_right)
+    else:
+        screen.blit(background_image, (0, 0))
     y = 10
 
     # Settings screen
@@ -198,7 +238,8 @@ def draw_interface():
             if item == "Change Text Color":
                 item_display = f"{item}: {COLOR_THEMES[selected_color_idx][0]}"
             elif item == "Change Background":
-                item_display = f"{item}: {BACKGROUND_IMAGES[background_idx]}"
+                # item_display = f"{item}: {BACKGROUND_IMAGES[background_idx]}"
+                item_display = f"{item}: {BACKGROUND_NAMES[background_idx]}"
             elif item == "Change Seek Speed":
                 item_display = f"{item}: {SEEK_SPEED}s"
             else:
@@ -248,43 +289,59 @@ def draw_interface():
                 screen.blit(text_surface, (left_padding, y_pos))
 
     else:
+        # Playing screen
         album = albums[selected_album_idx]
         song = songs[current_song_idx]
         update_current_pos()
 
-        minutes = int(current_pos) // 60
-        seconds = int(current_pos) % 60
-        time_str = f"{minutes}:{seconds:02d}"
+        # Time left in seconds
+        time_left = max(0, song_length - current_pos)
 
-        total_minutes = int(song_length) // 60
-        total_seconds = int(song_length) % 60
-        total_time_str = f"{total_minutes}:{total_seconds:02d}"
+        # Convert to mm:ss
+        left_minutes = int(time_left) // 60
+        left_seconds = int(time_left) % 60
+        time_left_str = f"{left_minutes}:{left_seconds:02d}"
 
-        screen.blit(font.render("Now Playing:", True, TEXT_COLOR), (10, y)); y += 20
-        screen.blit(font.render(f"Album: {album}", True, TEXT_COLOR), (10, y)); y += 20
-        screen.blit(font.render(f"Track: {current_song_idx + 1} / {len(songs)}", True, TEXT_COLOR), (10, y)); y += 20
+        # ALBUM NAME
+        text_surface = fresh_palm_font.render(f"{album}", True, (64, 59, 56))
+        text_rect = text_surface.get_rect(centerx=WIDTH // 2)
+        text_rect.top = 38
+        screen.blit(text_surface, text_rect)
 
+        # TRACK NUMBER
+        text_surface = time_font_small.render(f"{current_song_idx + 1}/{len(songs)}", True, (64, 59, 56))
+        text_rect = text_surface.get_rect(centerx= (WIDTH // 2) - 90)
+        text_rect.top = 153
+        screen.blit(text_surface, text_rect)
+
+        # TRACK NAME
         clean_name = song[5:] if len(song) > 5 else song
         if clean_name.lower().endswith(".mp3"):
             clean_name = clean_name[:-4]
-        screen.blit(font.render(f"Song: {clean_name}", True, TEXT_COLOR), (10, y)); y += 20
-        screen.blit(font.render(f"Time: {time_str} / {total_time_str}", True, TEXT_COLOR), (10, y)); y += 20
+        text_surface = fresh_palm_smaller.render(f"{clean_name}", True, (64, 59, 56))
+        text_rect = text_surface.get_rect(centerx=WIDTH // 2)
+        text_rect.top = 150
+        screen.blit(text_surface, text_rect)
 
+        # TIME LEFT
+        text_surface = time_font_small.render(f"{time_left_str}", True, (64, 59, 56))
+        text_rect = text_surface.get_rect(centerx= (WIDTH // 2) + 90)
+        text_rect.top = 153
+        screen.blit(text_surface, text_rect)
+
+        # TRACK TIME BAR
         bar_x = 10
-        bar_y = y + 5
         bar_width = WIDTH - 20
         bar_height = 6
-
-        song_progress = min(current_pos / song_length, 1.0) if song_length > 0 else 0
-        pygame.draw.rect(screen, TEXT_COLOR, (bar_x, bar_y, bar_width, bar_height), 1)
-        pygame.draw.rect(screen, TEXT_COLOR, (bar_x, bar_y, bar_width * song_progress, bar_height))
-        y = bar_y + bar_height + 10
-
         total_tracks = len(songs)
         album_progress = (current_song_idx + current_pos / song_length) / total_tracks if total_tracks > 0 and song_length > 0 else 0
         bar_y = y
         pygame.draw.rect(screen, TEXT_COLOR, (bar_x, bar_y, bar_width, bar_height), 1)
         pygame.draw.rect(screen, TEXT_COLOR, (bar_x, bar_y, bar_width * album_progress, bar_height))
+
+        # ISSUE - WHEELS GLITCH A BIT EVERY FULL ROTATION
+
+        # TODO - SPIN WHEELS FASTER WHEN SEEKING/SKIPPING
 
     pygame.display.flip()
 
