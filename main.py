@@ -30,6 +30,8 @@ BACKGROUND_IMAGES = [
     "StripeBG.png",
     "VaporBG.png",
     "BlackBG.png",
+    "VinylBG.png",
+    "CustomBG.png"
 ]
 background_idx = 4  # Starting with SpaceBG.png
 
@@ -86,6 +88,7 @@ is_playing = False
 is_in_album = False
 is_in_settings = False
 last_seek_time = 0
+is_seeking = False
 
 # Settings menu state
 settings_items = [
@@ -217,8 +220,13 @@ def draw_interface():
         pygame.draw.circle(screen, (33, 26, 22), (WIDTH - 84, 110), right_radius)
 
         screen.blit(blank_cassette, (0, 0))
+
+        #if is_playing:
+        #    wheel_angle = (wheel_angle + 2) % 360
+
+        spin_speed = 2 if not is_seeking else 6
         if is_playing:
-            wheel_angle = (wheel_angle + 2) % 360
+            wheel_angle = (wheel_angle + spin_speed) % 360
 
         rotated_wheel, _ = rotate_image(wheel_image, wheel_angle)
         wheel_pos_left = rotated_wheel.get_rect(center=(85, 110))
@@ -329,9 +337,14 @@ def draw_interface():
         text_rect.top = 153
         screen.blit(text_surface, text_rect)
 
-        # ISSUE - WHEELS GLITCH A BIT EVERY FULL ROTATION
+        # TODO - WHEELS GLITCH A BIT EVERY FULL ROTATION
 
         # TODO - SPIN WHEELS FASTER WHEN SEEKING/SKIPPING
+
+        # TODO - ADD CASSETTE TAPE STYLE CHANGE IN SETTINGS
+
+        # TODO - TAKE THE ARTIST NAME OUT OF TRACK NAME
+
 
     pygame.display.flip()
 
@@ -346,7 +359,14 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        if event.type == pygame.KEYUP:
+            if is_in_album and event.key in (pygame.K_2, pygame.K_3):
+                is_seeking = False
+
         if event.type == pygame.KEYDOWN:
+            if is_in_album and event.key in (pygame.K_2, pygame.K_3):
+                is_seeking = True
+
             if is_in_settings:
                 if event.key == pygame.K_2:
                     selected_settings_idx = (selected_settings_idx - 1) % len(settings_items)
