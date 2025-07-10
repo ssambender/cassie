@@ -48,11 +48,11 @@ wheel_image = pygame.image.load(os.path.join("assets", "Wheel.png")).convert_alp
 # Themes
 COLOR_THEMES = [
     ("WHITE", (255, 255, 255)),
-    ("TEAL", (137, 255, 255)),
-    ("PINK", (255, 185, 255)),
-    ("YELLOW", (255, 222, 56)),
-    ("ORANGE", (242, 163, 44)),
-    ("GREEN", (140, 235, 77)),
+    ("TEAL", (184, 255, 255)),
+    ("PINK", (255, 214, 255)),
+    ("YELLOW", (255, 235, 133)),
+    ("ORANGE", (255, 188, 94)),
+    ("GREEN", (163, 255, 77)),
 ]
 
 selected_color_idx = 0
@@ -328,16 +328,6 @@ def draw_interface():
         text_rect = text_surface.get_rect(centerx= (WIDTH // 2) + 90)
         text_rect.top = 153
         screen.blit(text_surface, text_rect)
-
-        # TRACK TIME BAR
-        bar_x = 10
-        bar_width = WIDTH - 20
-        bar_height = 6
-        total_tracks = len(songs)
-        album_progress = (current_song_idx + current_pos / song_length) / total_tracks if total_tracks > 0 and song_length > 0 else 0
-        bar_y = y
-        pygame.draw.rect(screen, TEXT_COLOR, (bar_x, bar_y, bar_width, bar_height), 1)
-        pygame.draw.rect(screen, TEXT_COLOR, (bar_x, bar_y, bar_width * album_progress, bar_height))
 
         # ISSUE - WHEELS GLITCH A BIT EVERY FULL ROTATION
 
