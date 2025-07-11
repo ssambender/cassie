@@ -38,7 +38,7 @@ BACKGROUND_IMAGES = [
     "VaporBG.png",
     "VinylBG.png",
 ]
-background_idx = 7  # Start with vaporwave bg
+background_idx = 7  # Start with vaporwave BG
 BACKGROUND_NAMES = [img[:-6] for img in BACKGROUND_IMAGES]
 
 
@@ -47,10 +47,11 @@ def load_background(index):
     return pygame.image.load(path).convert()
 
 
+# Load background image and wheel image
 background_image = load_background(background_idx)
 wheel_image = pygame.image.load(os.path.join("assets", "Wheel.png")).convert_alpha()
 
-# Themes
+# Text color themes
 COLOR_THEMES = [
     ("White", (255, 255, 255)),
     ("Teal", (184, 255, 255)),
@@ -65,6 +66,9 @@ cassette_style_idx = 0  # -1 means random, start on first non-random style
 TEXT_COLOR = COLOR_THEMES[selected_color_idx][1]
 WHITE = (255, 255, 255)  # For fixed white text
 REEL_COLOR = (33, 26, 22)
+
+artist_display_modes = ["Never", "On Pause", "Always"]
+artist_display_idx = 0  # 0 = Never, 1 = On Pause, 2 = Always
 
 
 def apply_color_theme(index):
@@ -102,7 +106,7 @@ settings_items = [
     "Change Text Color",
     "Change Seek Speed",
     "Change Cassette Style",
-    "Show Artist Name",  # never, on pause, always TODO
+    "Show Artist Name",
     "Connect to Bluetooth",
 ]
 selected_settings_idx = 0
@@ -154,8 +158,9 @@ def load_album(album_idx):
     songs = sorted([f for f in os.listdir(album_path) if f.lower().endswith(".mp3")])
     current_song_idx = 0
 
+    # Set the cassette artwork for the current/given album
     album_name = albums[album_idx]
-    if "awesome mix" in album_name.lower():
+    if "awesome mix" in album_name.lower():  # GOTG always gets style 4
         album_cassette_idx = 4
     elif cassette_style_idx >= 0:
         album_cassette_idx = cassette_style_idx % len(cassette_images)
@@ -163,12 +168,14 @@ def load_album(album_idx):
         album_cassette_idx = random.randint(0, len(cassette_images) - 1)
 
 
+# Gets length of current song
 def get_song_length():
     album_path = os.path.join(MUSIC_FOLDER, albums[selected_album_idx])
     song_path = os.path.join(album_path, songs[current_song_idx])
     return pygame.mixer.Sound(song_path).get_length()
 
 
+# Plays song
 def play_song(start_pos=0):
     global is_playing, current_pos, last_play_time, song_length
     album_path = os.path.join(MUSIC_FOLDER, albums[selected_album_idx])
@@ -181,6 +188,7 @@ def play_song(start_pos=0):
     is_playing = True
 
 
+# Self explanatory
 def pause_song():
     global is_playing, current_pos
     pygame.mixer.music.pause()
@@ -188,6 +196,7 @@ def pause_song():
     is_playing = False
 
 
+# Also self explanatory
 def resume_song():
     global is_playing, last_play_time
     pygame.mixer.music.unpause()
@@ -195,13 +204,14 @@ def resume_song():
     is_playing = True
 
 
+# if something breaks here, the three "current_time_ms" were "now", but had scope warning
 def update_current_pos():
     global current_pos, last_play_time
     if is_playing:
-        now = pygame.time.get_ticks()
-        delta = (now - last_play_time) / 1000.0
+        current_time_ms = pygame.time.get_ticks()
+        delta = (current_time_ms - last_play_time) / 1000.0
         current_pos += delta
-        last_play_time = now
+        last_play_time = current_time_ms
         if current_pos >= song_length:
             next_song()
 
@@ -217,7 +227,7 @@ def seek(direction):
             play_song(0)
             prev_length = song_length
             overflow = -new_pos
-            new_seek_pos = max(0, prev_length - overflow)
+            new_seek_pos = max(0.0, prev_length - overflow)
             play_song(start_pos=new_seek_pos)
         else:
             play_song(start_pos=0)
@@ -242,32 +252,30 @@ def next_song(start_pos=0.0):
 def draw_interface():
     global wheel_angle
 
-    # screen.blit(background_image, (0, 0))
     if is_in_album:
-        # DRAW A BLACK BG
+        # Draw a black BG
         screen.fill((0, 0, 0))
 
-        # Update current position for dynamic reel sizing
+        # Update and draw dynamic reel shapes
         update_current_pos()
         total_tracks = len(songs)
-        album_progress = (
-                                     current_song_idx + current_pos / song_length) / total_tracks if total_tracks > 0 and song_length > 0 else 0
+        album_progress = (current_song_idx + current_pos / song_length) / total_tracks if total_tracks > 0 and song_length > 0 else 0
         left_radius = int(78 - (45 * album_progress))
         right_radius = int(35 + (40 * album_progress))
         pygame.draw.circle(screen, (33, 26, 22), (85, 110), left_radius)
         pygame.draw.circle(screen, (33, 26, 22), (WIDTH - 84, 110), right_radius)
 
-        current_album = albums[selected_album_idx]
+        # Get/load cassette image based on which should be used, and display it
         cassette_image = load_cassette_image()
         screen.blit(cassette_image, (0, 0))
-        # screen.blit(blank_cassette, (0, 0))
 
-        # if is_playing:
-        #    wheel_angle = (wheel_angle + 2) % 360
-
+        # Calculate, animate, and display spool wheels
         spin_speed = 2 if not is_seeking else 6
         if is_playing or is_seeking:
             wheel_angle = (wheel_angle + spin_speed) % 360
+
+        # TODO - WHEELS GLITCH A BIT EVERY FULL ROTATION
+        # TODO - SPIN WHEELS FASTER WHEN SEEKING/SKIPPING
 
         rotated_wheel, _ = rotate_image(wheel_image, wheel_angle)
         wheel_pos_left = rotated_wheel.get_rect(center=(85, 110))
@@ -277,9 +285,11 @@ def draw_interface():
         screen.blit(rotated_wheel, wheel_pos_right)
     else:
         screen.blit(background_image, (0, 0))
+
+    # Set a 10px padding at the top of settings screen
     y = 10
 
-    # Settings screen
+    # Display the Settings screen
     if is_in_settings:
         screen.blit(font.render("SETTINGS MENU", True, WHITE), (10, y))
         y += 25
@@ -287,7 +297,6 @@ def draw_interface():
             if item == "Change Text Color":
                 item_display = f"{item}: {COLOR_THEMES[selected_color_idx][0]}"
             elif item == "Change Background":
-                # item_display = f"{item}: {BACKGROUND_IMAGES[background_idx]}"
                 item_display = f"{item}: {BACKGROUND_NAMES[background_idx]}"
             elif item == "Change Seek Speed":
                 item_display = f"{item}: {SEEK_SPEED}s"
@@ -295,10 +304,10 @@ def draw_interface():
                 if cassette_style_idx == -1:
                     style_name = "Random"
                 else:
-                    style_name = str(cassette_style_idx + 1)
+                    style_name = str(cassette_style_idx + 1)  # Adding +1 only because "Style 0" looks strange for user
                 item_display = f"{item}: {style_name}"
             elif item == "Show Artist Name":
-                item_display = f"Show Artist Name: Never"
+                item_display = f"Show Artist Name: {artist_display_modes[artist_display_idx]}"
             else:
                 item_display = item
             prefix = "> " if i == selected_settings_idx else "  "
@@ -322,12 +331,7 @@ def draw_interface():
         line_height = 32
         center_y = HEIGHT // 2 - (line_height // 2)
 
-        distance_opacity = {
-            0: 255,
-            1: 128,
-            2: 64,
-            3: 25
-        }
+        distance_opacity = {0: 255, 1: 128, 2: 64, 3: 25}
 
         for i in range(-half_visible, half_visible + 1):
             idx = selected_album_idx + i
@@ -351,69 +355,61 @@ def draw_interface():
         song = songs[current_song_idx]
         update_current_pos()
 
-        # Time left in seconds
+        # Time left in seconds of current song
         time_left = max(0, song_length - current_pos)
-
-        # Convert to mm:ss
         left_minutes = int(time_left) // 60
         left_seconds = int(time_left) % 60
         time_left_str = f"{left_minutes}:{left_seconds:02d}"
 
-        # ALBUM NAME
+        # Display album name
         text_surface = fresh_palm_font.render(f"{album}", True, (64, 59, 56))
         text_rect = text_surface.get_rect(centerx=WIDTH // 2)
         text_rect.top = 38
         screen.blit(text_surface, text_rect)
 
-        # TRACK NUMBER
+        # Display song-in-album number
         text_surface = time_font_small.render(f"{current_song_idx + 1}/{len(songs)}", True, (64, 59, 56))
         text_rect = text_surface.get_rect(centerx=(WIDTH // 2) - 90)
         text_rect.top = 153
         screen.blit(text_surface, text_rect)
 
-        # TRACK NAME
+        # Clean up song filename
         clean_name = song[5:] if len(song) > 5 else song
         if clean_name.lower().endswith(".mp3"):
             clean_name = clean_name[:-4]
 
-        # Split by dash
+        # Extract title and artist (if aplicable)
         parts = clean_name.split(" - ")
         if len(parts) >= 2:
-            title = parts[0].strip()
-            artist = parts[-1].strip()
-            # Handle cases like: "02 - Song - Artist" or "02 - Song - Remix - Artist"
             title = " - ".join(parts[0:-1]).strip()
+            artist = parts[-1].strip()
         else:
             title = clean_name.strip()
             artist = ""
+        # Abbreviate/shorten longer titles
+        if len(title) > 24:
+            title = title[:22] + "..."
 
         # Display title
         title_surface = fresh_palm_smaller.render(f"{title}", True, (64, 59, 56))
         title_rect = title_surface.get_rect(centerx=WIDTH // 2)
         title_rect.top = 150
         screen.blit(title_surface, title_rect)
-        # text_surface = fresh_palm_smaller.render(f"{clean_name}", True, (64, 59, 56))
-        # text_rect = text_surface.get_rect(centerx=WIDTH // 2)
-        # text_rect.top = 150
-        # screen.blit(text_surface, text_rect)
 
+        # Display artist (if applicable)
         if artist:
             artist_surface = time_font_small.render(artist, True, (64, 59, 56))
             artist_rect = artist_surface.get_rect(centerx=WIDTH // 2)
-            artist_rect.top = 168
-            screen.blit(artist_surface, artist_rect)
+            artist_rect.top = 169
+            show_artist = (artist_display_idx == 2 or (artist_display_idx == 1 and not is_playing))
+            if show_artist:
+                screen.blit(artist_surface, artist_rect)
 
-        # TIME LEFT
+        # Display time left
         text_surface = time_font_small.render(f"{time_left_str}", True, (64, 59, 56))
         text_rect = text_surface.get_rect(centerx=(WIDTH // 2) + 90)
         text_rect.top = 153
         screen.blit(text_surface, text_rect)
-
-        # TODO - WHEELS GLITCH A BIT EVERY FULL ROTATION
-
-        # TODO - SPIN WHEELS FASTER WHEN SEEKING/SKIPPING
-
-        # TODO - TAKE THE ARTIST NAME OUT OF TRACK NAME
 
     pygame.display.flip()
 
@@ -456,6 +452,8 @@ while running:
                         cassette_style_idx += 1
                         if cassette_style_idx > 9:
                             cassette_style_idx = -1
+                    elif selected_settings_idx == 4:
+                        artist_display_idx = (artist_display_idx + 1) % len(artist_display_modes)
                 elif event.key == pygame.K_4:
                     is_in_settings = False
             elif not is_in_album:
