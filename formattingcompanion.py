@@ -154,7 +154,6 @@ class MP3RenamerApp:
         self.number_var = tk.StringVar()
 
         # Track Name
-        groupOffset = 25
         tk.Label(self.root, text="Track Name", fg="white", bg="#F08820").place(x=390, y=275)
         tk.Entry(self.root, textvariable=self.track_var).place(x=390, y=295, width=200)
         tk.Button(self.root, text="✕", fg="white", bg="#F08820", cursor="hand2", command=lambda: self.track_var.set("")).place(x=595, y=293, width=22, height=22)
@@ -286,24 +285,17 @@ class MP3RenamerApp:
             return
 
         album_name = self.album_var.get().strip()
-        print(f"Album name entered: '{album_name}'")
-        print(f"Output folder: '{self.dest_folder}'")
 
         if album_name:
             album_folder_path = os.path.join(self.dest_folder, album_name)
-            print(f"Album folder path: {album_folder_path}")
             if not os.path.exists(album_folder_path):
-                print("Album folder does not exist, creating...")
                 os.makedirs(album_folder_path)
-            else:
-                print("Album folder already exists.")
             save_folder = album_folder_path
         else:
             save_folder = self.dest_folder
 
         new_name = f"{self.number_var.get().zfill(2)} - {self.track_var.get()} - {self.artist_var.get()}.mp3"
         dest_path = os.path.join(save_folder, new_name)
-        print(f"Destination file path: {dest_path}")
 
         if os.path.exists(dest_path):
             if not messagebox.askyesno("File Exists", "Output file already exists. Overwrite?"):
