@@ -91,7 +91,7 @@ albums = sorted([
     if os.path.isdir(os.path.join(MUSIC_FOLDER, folder)) and
        any(f.lower().endswith(".mp3") for f in os.listdir(os.path.join(MUSIC_FOLDER, folder)))
 ])
-selected_album_idx = len(albums) // 2
+selected_album_idx = len(albums) // 2 if albums else 0
 songs = []
 current_song_idx = 0
 is_playing = False
@@ -155,7 +155,7 @@ def rotate_image(image, angle):
 def load_album(album_idx):
     global songs, current_song_idx, album_cassette_idx
     album_path = os.path.join(MUSIC_FOLDER, albums[album_idx])
-    songs = sorted([f for f in os.listdir(album_path) if f.lower().endswith(".mp3")])
+    songs = sorted([f for f in os.listdir(album_path) if f.lower().endswith(".mp3")]) if os.path.exists(album_path) else []
     current_song_idx = 0
 
     # Set the cassette artwork for the current/given album
@@ -178,6 +178,8 @@ def get_song_length():
 # Plays song
 def play_song(start_pos=0):
     global is_playing, current_pos, last_play_time, song_length
+    if not albums or not songs:
+        return
     album_path = os.path.join(MUSIC_FOLDER, albums[selected_album_idx])
     song_path = os.path.join(album_path, songs[current_song_idx])
     pygame.mixer.music.load(song_path)
@@ -325,6 +327,13 @@ def draw_interface():
 
     # Main album select screen
     if not is_in_album:
+        if not albums:
+            warning = font.render("No albums loaded.", True, COLOR_THEMES[selected_color_idx][0])
+            hint = font.render("Add folders with .mp3 files in /music", True, COLOR_THEMES[selected_color_idx][0])
+            screen.blit(warning, (WIDTH // 2 - warning.get_width() // 2, HEIGHT // 2 - 20))
+            screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, HEIGHT // 2 + 10))
+            pygame.display.flip()
+            return
         max_visible = 7
         half_visible = max_visible // 2
         total_albums = len(albums)
@@ -457,7 +466,11 @@ while running:
                 elif event.key == pygame.K_4:
                     is_in_settings = False
             elif not is_in_album:
-                if event.key == pygame.K_3:
+                if event.key == pygame.K_4:
+                    is_in_settings = True
+                elif not albums:
+                    pass  # No albums, ignore other keys
+                elif event.key == pygame.K_3:
                     selected_album_idx = (selected_album_idx + 1) % len(albums)
                 elif event.key == pygame.K_2:
                     selected_album_idx = (selected_album_idx - 1) % len(albums)
@@ -465,8 +478,6 @@ while running:
                     is_in_album = True
                     load_album(selected_album_idx)
                     play_song()
-                elif event.key == pygame.K_4:
-                    is_in_settings = True
             else:
                 if event.key == pygame.K_1:
                     if is_playing:
