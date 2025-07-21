@@ -9,7 +9,7 @@
 <p align="center">
 Raspberry Pi based mp3 cassette player that gives the nostalgic feel of analog tech. Use the desktop loader companion app to format and upload songs to the pi's storage.
  <br>
- <a href="https://github.com/ssambender/cassie"><strong>Check it out Online »</strong></a>
+ <a href="https://github.com/ssambender/cassie/releases/tag/v1.0.0"><strong>Check it out Online »</strong></a>
 </p>
 
 ___
@@ -23,6 +23,16 @@ ___
 - Dispaly artists optional setting
 - Autoplay
 - Desktop music formatter
+
+Controls:
+
+`1` - Play/Pause/Select
+
+`2` - Rewind/Previous/Up
+
+`3` - Forward/Next/Down
+
+`4` - Back/Home/Settings
 
 ---
 
