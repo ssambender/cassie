@@ -26,6 +26,12 @@ ___
 
 ---
 
+<p align="center">
+ <img src="https://raw.githubusercontent.com/ssambender/cassie/refs/heads/main/space%20advertisement.png?token=GHSAT0AAAAAADE5I3JII2L3WEAZRP2QMO4Q2D5ZU4A" height="420">
+</p>
+
+---
+
 
 ### Planned features:
 - [ ] Bluetooth compatability
