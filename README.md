@@ -1,7 +1,7 @@
 <br>
 
 <p align="center">
- <img src="https://raw.githubusercontent.com/ssambender/cassie/refs/heads/main/cassie%20logo%20rainbow%20transparent.png?token=GHSAT0AAAAAADE5I3JIOHXLRBR3H32OAYGO2D5ZRFQ" alt="cassie Logo" height="165">
+ <img src="https://github.com/ssambender/cassie/blob/main/cassie%20logo%20rainbow%20transparent.png?raw=true" alt="cassie Logo" height="165">
 </p>
 
 <h3 align="center">cassie | mp3 cassette player</h3>
